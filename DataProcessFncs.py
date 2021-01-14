@@ -3,7 +3,7 @@ import numpy as np
 import json
 from tkinter import filedialog
 
-from Mdf_InterfaceFns import GetFaultCodesfromA2l, getTestLogFileNames, FetchMdfHeader, GetDatafromMdf_asDF
+from InputProcessFncs import GetFaultCodesfromA2l, getTestLogFileNames, FetchMdfHeader, GetDatafromMdf_asDF
 
 
 def TestRegimeMarker(Pdl):

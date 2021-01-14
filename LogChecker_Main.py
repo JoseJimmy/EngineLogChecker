@@ -3,9 +3,9 @@ from tkinter import filedialog
 import pandas as pd
 from os import makedirs,path
 from configparser import ConfigParser
-from Df_ProcessFns import MeanVar_NPercentile,LabelTestDataDf,CreateFltDict, GetStepFltDuration,get_NPercentile
-from Mdf_InterfaceFns import GetSignalsLogged,GetDatafromMdf_asDF,FetchMdfHeader,getTestLogFileNames
-from Excel_InterfaceFns import writetoExeclSheet
+from DataProcessFncs import MeanVar_NPercentile,LabelTestDataDf,CreateFltDict, GetStepFltDuration,get_NPercentile
+from InputProcessFncs import GetSignalsLogged,GetDatafromMdf_asDF,FetchMdfHeader,getTestLogFileNames
+from OutputFns import writetoExeclSheet
 pd.set_option('use_inf_as_na', True)
 from scipy.stats import ttest_ind
 import numpy as np
@@ -201,7 +201,7 @@ def main():
                     ii. Do a hypethesis test of the above sample with corresponding sample from baseline dict (step a.)
                     by function ttest_ind(test_sample, baseline_sample)
                     we do not do test if mean value of both are exactly same as function would retun a Nan
-                    
+                   
     
     bdata is populated with variables as rows and test step labels as columns 
     If there are N logs to analysed there will N-1 comparisons against baseline,
@@ -286,6 +286,7 @@ def main():
     parameters = [highlight_thres,baseline,SignalGroups, start_prctle, end_prctle]
     #Final step - write to excel
     writetoExeclSheet(SummaryExcelFilename,tables,parameters)
+    input("Results saved in %s .. Press any key to exit"%SummaryExcelFilename)
 
 
 if __name__ == '__main__':

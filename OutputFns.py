@@ -10,10 +10,6 @@ def writetoExeclSheet(Filename,tables,parameters):
     highlight_thres,baseline,SignalGroups,p_start,p_end = parameters
 
     print('Writing to raw summary data Excel to %s...'%Filename.replace('/','\\'), end='')
-    # else:
-    #     print('Writing to baselined summary data to %s...'%Filename.replace('/','\\'), end='')
-
-
     with pd.ExcelWriter(Filename) as excel_writer: #creates a file object for the excel file
         workbook = excel_writer.book
         cell_format = workbook.add_format({'bold': True, 'italic': True})
@@ -66,7 +62,7 @@ def writetoExeclSheet(Filename,tables,parameters):
             pdata.to_excel(excel_writer, sheet_name='Summary',header=False,index=False,
                                    startrow=start_row, startcol=0)
             worksheet = excel_writer.sheets['Summary']
-            txt='%s vs %s : P-Value for 2-sided Hypothesis test on Sample Means[sample taken between %d,%d percentiles] \n'%(key,baseline,100*p_start,100*p_end)
+            txt='%s vs %s : P-Value for 2-sided Hypothesis test on Sample Means [sample taken between %d,%d percentile of each test step] \n'%(key,baseline,100*p_start,100*p_end)
             worksheet.write_string(start_row-1, 1, txt,cell_format)
             worksheet.conditional_format(start_row, 1, start_row + nrow-1 , ncol,
                                          {'type': 'cell', 'criteria': '>=',
@@ -94,14 +90,14 @@ def writetoExeclSheet(Filename,tables,parameters):
 
 
         """"
-        Summary 
+        Fault Summary 
         """
         nrow, ncol = FaultStat_flc.shape
         label = 'Fault Codes and Cumulative duration(sec) during FLC phase of test '
         startrow=2
-        FaultStat_flc.to_excel(excel_writer, index_label=label, sheet_name='FaultStats', index=False, header=False,
+        FaultStat_flc.to_excel(excel_writer, index_label=label, sheet_name='ActiveFaultsDuration', index=False, header=False,
                                startrow=startrow, startcol=0)
-        worksheet = excel_writer.sheets['FaultStats']
+        worksheet = excel_writer.sheets['ActiveFaultsDuration']
         worksheet.write_string(1, 0, label, cell_format)
 
         worksheet.conditional_format(2, 1, nrow + 1, ncol - 1,
@@ -110,7 +106,7 @@ def writetoExeclSheet(Filename,tables,parameters):
         label = 'Fault Codes and Cumulative duration(sec) during Step Response phase of test '
         startrow=nrow + 4
 
-        FaultStat_step.to_excel(excel_writer, index_label=label, sheet_name='FaultStats', index=False, header=False,
+        FaultStat_step.to_excel(excel_writer, index_label=label, sheet_name='ActiveFaultsDuration', index=False, header=False,
                                 startrow=startrow,
                                 startcol=0)
         worksheet.write_string(nrow + 3, 0, label, cell_format)
@@ -143,12 +139,12 @@ def writetoExeclSheet(Filename,tables,parameters):
 
 
                 meandf = meandf.fillna('No Data')  # filling out missing values
-                sheet_name = 'SigGroup-'+str(grpName)
+                sheet_name = 'SignalGroup-'+str(grpName)
                 # Write mean values  to excel file
                 meandf.to_excel(excel_writer, index_label=var, sheet_name=sheet_name, index=False, header=False,
                                 startrow=startrow, startcol=0)
                 worksheet = excel_writer.sheets[sheet_name]
-                header_text = var+'[Mean value for each test step]'
+                header_text = var+'  [Mean value for each test step]'
                 worksheet.write_string(startrow - 1, 0, header_text, cell_format)
                 startrow = startrow + nrow + 2
             headCols = list(meandf.columns)
