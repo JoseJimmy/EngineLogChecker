@@ -201,8 +201,7 @@ def main():
                     ii. Do a hypethesis test of the above sample with corresponding sample from baseline dict (step a.)
                     by function ttest_ind(test_sample, baseline_sample)
                     we do not do test if mean value of both are exactly same as function would retun a Nan
-                   
-    
+
     bdata is populated with variables as rows and test step labels as columns 
     If there are N logs to analysed there will N-1 comparisons against baseline,
     hence n-1 copies of bdata , all stored in dictionary BaselinePData as individual dataframne              
