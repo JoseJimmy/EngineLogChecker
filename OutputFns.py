@@ -1,29 +1,27 @@
 import pandas as pd
+
 """
 Function for writing results into excel file
 writetoExeclSheet(Filename,tables,parameters,Rawdata=False) 
 """
 
-def writetoExeclSheet(Filename,tables,parameters):
 
-    MeanDfs,Sw_info_table,Signaltracker,FaultStat_flc,FaultStat_step,BaselinePData = tables
-    highlight_thres,baseline,SignalGroups,p_start,p_end = parameters
+def writetoExeclSheet(Filename, tables, parameters):
+    MeanDfs, Sw_info_table, Signaltracker, FaultStat_flc, FaultStat_step, BaselinePData = tables
+    highlight_thres, baseline, SignalGroups, p_start, p_end = parameters
 
-    print('Writing to raw summary data Excel to %s...'%Filename.replace('/','\\'), end='')
-    with pd.ExcelWriter(Filename) as excel_writer: #creates a file object for the excel file
+    print('Writing to raw summary data Excel to %s...' % Filename.replace('/', '\\'), end='')
+    with pd.ExcelWriter(Filename) as excel_writer:  # creates a file object for the excel file
         workbook = excel_writer.book
         cell_format = workbook.add_format({'bold': True, 'italic': True})
         perc_format = workbook.add_format()
 
-
-
         # Cell format definition
         baseline_percformat = workbook.add_format({
-                'bold': True,
-                'text_wrap': True,
-                'color': 'green',
-            })
-
+            'bold': True,
+            'text_wrap': True,
+            'color': 'green',
+        })
 
         baseline_format = workbook.add_format({
             'bold': True,
@@ -39,7 +37,6 @@ def writetoExeclSheet(Filename,tables,parameters):
         # higlight values above allowed deviation in baseline sheet
         valueOOR_fmt = workbook.add_format({'bg_color': '#FFC7CE', 'font_color': '#9C0006'})
 
-
         # Light red fill with dark red text.
         red_format = workbook.add_format({'bg_color': '#FFC7CE',
                                           'font_color': '#9C0006'})
@@ -52,29 +49,27 @@ def writetoExeclSheet(Filename,tables,parameters):
         cell_format.set_font_color('green')
         start_row = 2
 
-        for idx,key in enumerate(BaselinePData.keys()):
+        for idx, key in enumerate(BaselinePData.keys()):
+            pdata = BaselinePData[key]
+            nrow = pdata.shape[0]
+            ncol = pdata.shape[1]
 
-            pdata=BaselinePData[key]
-            nrow=pdata.shape[0]
-            ncol=pdata.shape[1]
-
-
-            pdata.to_excel(excel_writer, sheet_name='Summary',header=False,index=False,
-                                   startrow=start_row, startcol=0)
+            pdata.to_excel(excel_writer, sheet_name='Summary', header=False, index=False,
+                           startrow=start_row, startcol=0)
             worksheet = excel_writer.sheets['Summary']
-            txt='%s vs %s : P-Value for 2-sided Hypothesis test on Sample Means [sample taken between %d,%d percentile of each test step] \n'%(key,baseline,100*p_start,100*p_end)
-            worksheet.write_string(start_row-1, 1, txt,cell_format)
-            worksheet.conditional_format(start_row, 1, start_row + nrow-1 , ncol,
+            txt = '%s vs %s : P-Value for 2-sided Hypothesis test on Sample Means [sample taken between %d,%d percentile of each test step] \n' % (
+            key, baseline, 100 * p_start, 100 * p_end)
+            worksheet.write_string(start_row - 1, 1, txt, cell_format)
+            worksheet.conditional_format(start_row, 1, start_row + nrow - 1, ncol,
                                          {'type': 'cell', 'criteria': '>=',
                                           'value': highlight_thres,
                                           'format': red_format})
-            worksheet.conditional_format(start_row, 1, start_row + nrow-1 , ncol,
-                                        {'type': 'cell',
-                                                    'criteria': '<',
-                                                    'value': highlight_thres,
-                                                    'format': green_format})
-            start_row=start_row+nrow+2
-
+            worksheet.conditional_format(start_row, 1, start_row + nrow - 1, ncol,
+                                         {'type': 'cell',
+                                          'criteria': '<',
+                                          'value': highlight_thres,
+                                          'format': green_format})
+            start_row = start_row + nrow + 2
 
         worksheet = excel_writer.sheets['Summary']
 
@@ -88,14 +83,14 @@ def writetoExeclSheet(Filename,tables,parameters):
         for col_num, value in enumerate(headCols):
             worksheet.write(0, col_num, value, header_format)
 
-
         """"
         Fault Summary 
         """
         nrow, ncol = FaultStat_flc.shape
         label = 'Fault Codes and Cumulative duration(sec) during FLC phase of test '
-        startrow=2
-        FaultStat_flc.to_excel(excel_writer, index_label=label, sheet_name='ActiveFaultsDuration', index=False, header=False,
+        startrow = 2
+        FaultStat_flc.to_excel(excel_writer, index_label=label, sheet_name='ActiveFaultsDuration', index=False,
+                               header=False,
                                startrow=startrow, startcol=0)
         worksheet = excel_writer.sheets['ActiveFaultsDuration']
         worksheet.write_string(1, 0, label, cell_format)
@@ -104,9 +99,10 @@ def writetoExeclSheet(Filename,tables,parameters):
                                      {'type': 'cell', 'criteria': '>', 'value': 0, 'format': valueOOR_fmt})
 
         label = 'Fault Codes and Cumulative duration(sec) during Step Response phase of test '
-        startrow=nrow + 4
+        startrow = nrow + 4
 
-        FaultStat_step.to_excel(excel_writer, index_label=label, sheet_name='ActiveFaultsDuration', index=False, header=False,
+        FaultStat_step.to_excel(excel_writer, index_label=label, sheet_name='ActiveFaultsDuration', index=False,
+                                header=False,
                                 startrow=startrow,
                                 startcol=0)
         worksheet.write_string(nrow + 3, 0, label, cell_format)
@@ -136,15 +132,13 @@ def writetoExeclSheet(Filename,tables,parameters):
                 meandf = MeanDfs[var].copy(deep=True)
                 nrow, ncol = meandf.shape
 
-
-
                 meandf = meandf.fillna('No Data')  # filling out missing values
-                sheet_name = 'SignalGroup-'+str(grpName)
+                sheet_name = 'SignalGroup-' + str(grpName)
                 # Write mean values  to excel file
                 meandf.to_excel(excel_writer, index_label=var, sheet_name=sheet_name, index=False, header=False,
                                 startrow=startrow, startcol=0)
                 worksheet = excel_writer.sheets[sheet_name]
-                header_text = var+'  [Mean value for each test step]'
+                header_text = var + '  [Mean value for each test step]'
                 worksheet.write_string(startrow - 1, 0, header_text, cell_format)
                 startrow = startrow + nrow + 2
             headCols = list(meandf.columns)
