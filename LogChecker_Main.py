@@ -1,17 +1,19 @@
 import tkinter
-from tkinter import filedialog
-import pandas as pd
-from os import makedirs,path
 from configparser import ConfigParser
-from DataProcessFncs import MeanVar_NPercentile,LabelTestDataDf,CreateFltDict, GetStepFltDuration,get_NPercentile
-from InputProcessFncs import GetSignalsLogged,GetDatafromMdf_asDF,FetchMdfHeader,getTestLogFileNames
+from os import makedirs, path
+from tkinter import filedialog
+
+import pandas as pd
+
+from DataProcessFncs import MeanVar_NPercentile, LabelTestDataDf, CreateFltDict, GetStepFltDuration, get_NPercentile
+from InputProcessFncs import GetSignalsLogged, GetDatafromMdf_asDF, FetchMdfHeader, getTestLogFileNames
 from OutputFns import writetoExeclSheet
+
 pd.set_option('use_inf_as_na', True)
 from scipy.stats import ttest_ind
-import numpy as np
+
 
 def main():
-
     """
     Reading parameters from conf.py
     """
@@ -36,7 +38,7 @@ def main():
     highlight_thres = float(Settings['pvalue_highlight_thres'])
     DataDump = bool(Settings['datadump'])
 
-    #Defining test step that will be used for filtering/grouping for mean calculation
+    # Defining test step that will be used for filtering/grouping for mean calculation
     TestStepLabels = ['FLC_SteadyState_900Rpm', 'FLC_SteadyState_1000Rpm', 'FLC_SteadyState_1100Rpm',
                       'FLC_SteadyState_1200Rpm',
                       'FLC_SteadyState_1300Rpm', 'FLC_SteadyState_1400Rpm', 'FLC_SteadyState_1500Rpm',
@@ -57,10 +59,9 @@ def main():
     for item in SignalGroups.keys():
         SigListConf += SignalGroups[item]
 
-
     # Adding addtional signals to help label test steps
 
-    SigList = SigListConf + ['Engine_speed', 'Pedal.Value','Actual_fuel_value']
+    SigList = SigListConf + ['Engine_speed', 'Pedal.Value', 'Actual_fuel_value']
     SigList = list(set(SigList))
     SigListConf = list(set(SigListConf))
 
@@ -70,8 +71,8 @@ def main():
     tkinter.Tk().withdraw()
     print("\nSelect folder location of MDF/DAT files ")
     testlogDir = filedialog.askdirectory(title="Select Test log Directory ")
-    txt=testlogDir.replace('/','\\')
-    print("Selected - %s\n"%txt)
+    txt = testlogDir.replace('/', '\\')
+    print("Selected - %s\n" % txt)
     datfiles = getTestLogFileNames(testlogDir)
     print("Select a dat file to set as baseline file ")
 
@@ -82,11 +83,11 @@ def main():
     baselineFile = filedialog.askopenfilename(initialdir=testlogDir, title="Select a Log file to use as baseline",
                                               filetypes=(("dat files", "*.dat"), ("all files", "*.*")))
     baselineFile = path.basename(baselineFile)
-    txt=baselineFile.replace('/','\\')
-    print("Selected - %s\n"%txt)
+    txt = baselineFile.replace('/', '\\')
+    print("Selected - %s\n" % txt)
 
     ReportPath = path.join(testlogDir, 'report')
-    if(DataDump==True):
+    if (DataDump == True):
         DataDumpPath = path.join(ReportPath, 'data')
         try:
             makedirs(DataDumpPath)
@@ -108,9 +109,9 @@ def main():
     # Cycle through each dat files and read required signals
 
     for idx, filename in enumerate(datfiles):
-        print("Getting Data and Labelling - %s...." % path.basename(filename),end='')
+        print("Getting Data and Labelling - %s...." % path.basename(filename), end='')
         Signaltracker = GetSignalsLogged(Signaltracker, filename)
-        #extract header info
+        # extract header info
         header = FetchMdfHeader(filename)
         SW_id = header['A2L']
         curfile = path.basename(filename)
@@ -134,9 +135,9 @@ def main():
         LogDataset[SW_id] = temp_df.copy(deep=True)
         # if data dump is required, copy labelled df to data folder
         if (DataDump == True):
-            csv_filename=header['A2L']+'.csv'
+            csv_filename = header['A2L'] + '.csv'
             csv_filename = path.join(DataDumpPath, csv_filename)
-            temp_df.to_csv(csv_filename,index=False)
+            temp_df.to_csv(csv_filename, index=False)
 
         print('done')
 
@@ -150,7 +151,6 @@ def main():
     If there are n variables, there will be n ResultsMean for each, all of them added to a dict - MeanDfs
       
     """
-
 
     for vno, Var in enumerate(SigListConf):
         vno_total = len(SigListConf)
@@ -223,42 +223,40 @@ def main():
             steps_filter = TestDfwithLabel['TestStepLabel'].isin(TestStepLabels)
             FLC_grps = TestDfwithLabel[steps_filter].groupby('TestStepLabel')
             for StepGrp in FLC_grps:
-                grp_name=StepGrp[0]
+                grp_name = StepGrp[0]
                 grp_data = StepGrp[1]
                 grp_data = grp_data.sort_index()
-                BaselineVarData[grp_name]=grp_data
-
+                BaselineVarData[grp_name] = grp_data
 
             TestDfwithLabel = LogDataset[id_key][varList].copy(deep=True)
             filt_cond = TestDfwithLabel['TestStepLabel'].str.contains('FLC_SteadyState')
             filt_cond = filt_cond | TestDfwithLabel['TestStepLabel'].str.contains('StepResponse_SteadyState1200')
             filt_cond = filt_cond | TestDfwithLabel['TestStepLabel'].str.contains('StepResponse_SteadyState1900')
             FLC_grps = TestDfwithLabel[filt_cond].groupby('TestStepLabel')
-            pvals=[Var]
-            pval_cols=['Variable']
-
+            pvals = [Var]
+            pval_cols = ['Variable']
 
             for StepGrp in FLC_grps:
 
                 step = StepGrp[0]
-                if(step not in BaselineVarData.keys()):
+                if (step not in BaselineVarData.keys()):
                     continue
                 testStepDf = StepGrp[1]
                 testStepDf = testStepDf.sort_index()
-                baseline_sample =BaselineVarData[step][Var]
-                test_sample=testStepDf[Var]
+                baseline_sample = BaselineVarData[step][Var]
+                test_sample = testStepDf[Var]
                 baseline_sample = get_NPercentile(baseline_sample, start_prctle, end_prctle)
                 test_sample = get_NPercentile(test_sample, start_prctle, end_prctle)
-                if((baseline_sample.mean()-test_sample.mean())!=0):
+                if ((baseline_sample.mean() - test_sample.mean()) != 0):
                     ttest, pval = ttest_ind(test_sample, baseline_sample)
                 else:
-                    pval=0
-                pvals.append(round(pval,3))
+                    pval = 0
+                pvals.append(round(pval, 3))
                 pval_cols.append(step)
                 df = pd.DataFrame(columns=pval_cols)
                 df.loc[0] = pvals
-            bdata=bdata.append(df)
-        BaselinePData[id_key]=bdata
+            bdata = bdata.append(df)
+        BaselinePData[id_key] = bdata
 
     """   
     Tabulate fault duration for each data set 
@@ -281,12 +279,12 @@ def main():
     Write to excel files - Raw summary data and Baselined summary data 
     """
     # Packing all dataframes and dictionaries into a list for function call to write to excel
-    tables = [MeanDfs,Sw_info_table,Signaltracker,FaultStat_flc,FaultStat_step,BaselinePData]
+    tables = [MeanDfs, Sw_info_table, Signaltracker, FaultStat_flc, FaultStat_step, BaselinePData]
     # Packing all variables into a list for function call to write to excel
-    parameters = [highlight_thres,baseline,SignalGroups, start_prctle, end_prctle]
-    #Final step - write to excel
-    writetoExeclSheet(SummaryExcelFilename,tables,parameters)
-    input("Results saved in %s .. Press any key to exit"%SummaryExcelFilename)
+    parameters = [highlight_thres, baseline, SignalGroups, start_prctle, end_prctle]
+    # Final step - write to excel
+    writetoExeclSheet(SummaryExcelFilename, tables, parameters)
+    input("Results saved in %s .. Press any key to exit" % SummaryExcelFilename)
 
 
 if __name__ == '__main__':
